@@ -1,18 +1,30 @@
+const fs = require("fs");
 const path = require("path");
-const { skillsDir } = require("../utils/paths");
 
 function loadSkill(skillName) {
-  const skillPath = path.join(skillsDir, skillName);
+  const skillPath = path.join(require("../utils/paths").skillsDir, skillName);
 
-  const config = require(path.join(skillPath, "skill.json"));
+  // 1. ưu tiên skill.json
+  const jsonPath = path.join(skillPath, "skill.json");
+  if (fs.existsSync(jsonPath)) {
+    return {
+      name: skillName,
+      config: JSON.parse(fs.readFileSync(jsonPath, "utf-8"))
+    };
+  }
 
-  return {
-    name: skillName,
-    config,
-    path: skillPath,
-  };
+  // 2. fallback SKILL.md
+  const mdPath = path.join(skillPath, "SKILL.md");
+  if (fs.existsSync(mdPath)) {
+    return {
+      name: skillName,
+      config: {
+        systemPrompt: fs.readFileSync(mdPath, "utf-8")
+      }
+    };
+  }
+
+  throw new Error("No skill.json or SKILL.md found");
 }
 
-module.exports = {
-  loadSkill,
-};
+module.exports = { loadSkill };
